@@ -1,18 +1,18 @@
+# Stage 1: build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-WORKDIR /app
+COPY . .
 
-COPY .. .
+RUN dotnet restore DevOpsProject.HiveMind.API/DevOpsProject.HiveMind.API.csproj
 
 RUN dotnet publish DevOpsProject.HiveMind.API/DevOpsProject.HiveMind.API.csproj \
-  -c Release -o out
+    -c Release -o /app/out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
-
 WORKDIR /app
 
 COPY --from=build /app/out .
 
-EXPOSE 8081
-
+EXPOSE 5149
 ENTRYPOINT ["dotnet", "DevOpsProject.HiveMind.API.dll"]
