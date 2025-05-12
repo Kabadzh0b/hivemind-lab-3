@@ -1,12 +1,20 @@
-FROM node:20
-
+# Stage 1: build
+FROM node:20 AS build
 WORKDIR /app
 
-COPY .. .
+COPY package.json package-lock.json ./
+RUN npm ci
 
-RUN npm install
+COPY . .
 RUN npm run build
 
-EXPOSE 3000
+FROM node:20-alpine AS serve
+WORKDIR /app
 
-CMD ["npm", "run", "dev"]
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/public/config.json ./dist/config.json
+
+RUN npm install -g serve
+
+EXPOSE 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]

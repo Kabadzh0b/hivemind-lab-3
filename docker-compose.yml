@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - hive-network
+
+  communication-control:
+    build:
+      context: ./src/CommunicationControl
+      dockerfile: Dockerfile.communication
+    container_name: communication-control
+    ports:
+      - "8080:8080"
+    environment:
+      Redis__ConnectionString: "redis:6379"
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
+    depends_on:
+      - redis
+    networks:
+      - hive-network
+
+  hivemind:
+    build:
+      context: ./src/CommunicationControl
+      dockerfile: Dockerfile.hivemind
+    container_name: hivemind
+    ports:
+      - "8081:5149"
+    environment:
+      Redis__ConnectionString: "redis:6379"
+      CommunicationConfiguration__CommunicationControlIP: "communication-control"
+      CommunicationConfiguration__CommunicationControlPort: "8080"
+      ASPNETCORE_URLS: "http://0.0.0.0:5149"
+    depends_on:
+      - redis
+      - communication-control
+    networks:
+      - hive-network
+
+  map-client:
+    build:
+      context: ./src/MapClient
+      dockerfile: Dockerfile
+    container_name: mapclient
+    ports:
+      - "3000:3000"
+    depends_on:
+      - communication-control
+    networks:
+      - hive-network
+
+networks:
+  hive-network:
+    driver: bridge
